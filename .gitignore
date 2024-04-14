@@ -90,6 +90,8 @@ venv/
 env.bak/
 venv.bak/
 
+application_default_credentials.json
+
 # Spyder project settings
 .spyderproject
 .spyproject

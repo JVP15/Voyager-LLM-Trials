@@ -1,3 +1,51 @@
+# WHAT'S NEW
+
+I added support for different LLMs to see how well they can play Minecraft. 
+
+Other than GPT-4, the answer is not well.
+
+Here are the LLMs I currently support:
+
+| LLM                    | Embedding | Performance                                         | Notes                                                                                                             |
+|------------------------| --------- |-----------------------------------------------------| ----------------------------------------------------------------------------------|
+| GPT-4 0125             | OpenAI | Supreme, acquired diamond pickaxe and beyond        | -                                                                                |
+| GPT-4 Turbo 2024-04-09 | OpenAI | Excellent, acquired diamond pickaxe                 | It got a lot of 'failed to complete task: mine x wood' even though it succeeded in those tasks, not sure why |
+| GPT-4 Turbo 0125       | OpenAI | Poor, makes iron tools at best                      | -                                                                                             |
+| Gemini Pro 1.0         | models/embeddings001 | Very poor, doesn't go much farther than mining wood | Using Google AI Studio/Google GenerativeAI                    |
+| Mistral Large          | Mistral Embeddings | Very poor, doesn't go much farther than mining wood | -                                                                |
+| Claude Sonnet          | OpenAI | Very poor, doesn't go much farther than mining wood | Claude doesn't have an embedding model, so OpenAI is used. Using VertexAI model garden b/c I don't have an Anthropic API key |
+| Command R+             | Cohere Embeddings | Abysmal, couldn't even mine wood                    | Struggled with coding and JSON format                                                |
+| Vertex AI              | textgecko-003 | -                                                   | I have some support for the models on Vertex AI and the model garden, but it is still WIP                               |
+
+
+All of these LLMs were tested with the seed -2171441100564293352. GPT-4 was able to do pretty well in this seed, reliably mining diamonds and crafting a diamond pickaxe. 
+For all intents and purposes, this is a good test seed, and if another model can get diamonds, it'd be comparable to GPT-4.
+
+
+## Running
+
+I couldn't get the Azure login to work, so I'm using the `mc_port` method. 
+
+You can find the code I use to launch my experiments in `run.py`, just run the file (changing `mc_port` as needed).
+Also, I keep all of my API keys in a `.env` file in the root directory (same as `run.py`). See this table for the LLMs and their 
+corresponding environment variables and `model_name` (set in `run.py` for `action_agent_model_name`, `critic_agent_model_name`, etc.).
+
+| LLM | Env Variable     | Model Name                     |
+| --- |------------------|--------------------------------|
+| GPT-4 0125 | `OPENAI_API_KEY` | `gpt-4-0125-preview`           |
+| GPT-4 Turbo 2024-04-09 | `OPENAI_API_KEY` | `gpt-4-turbo-2024-04-09`       |
+| GPT-4 Turbo 0125 | `OPENAI_API_KEY` | `gpt-4-turbo-preview`          |
+| Gemini Pro 1.0 | `GOOGLE_API_KEY` | `models/gemini-1.0-pro-latest` |
+| Mistral Large | `MISTRAL_API_KEY` | `mistral-large-latest`         |
+| Claude Sonnet | `GOOGLE_APPLICATION_CREDENTIALS`[^1] | `claude-3-sonnet@20240229`     |
+| Command R+ | `COHERE_API_KEY` | `command-r-plus`               |
+| Vertex AI | `GOOGLE_APPLICATION_CREDENTIALS`[^1] | -                              |
+
+[^1]: You need to set the environment variable `GOOGLE_APPLICATION_CREDENTIALS` to the path of your Application Default Credentials. See [here](https://cloud.google.com/docs/authentication/application-default-credentials) for more information.
+
+
+
+
 # Voyager: An Open-Ended Embodied Agent with Large Language Models
 <div align="center">
 
@@ -162,3 +210,14 @@ If you find our work useful, please consider citing us!
 ```
 
 Disclaimer: This project is strictly for research purposes, and not an official product from NVIDIA.
+
+
+
+## Improvements
+
+This is where I could put a RAG system connected to the Minecraft Wiki:
+- Skill library (looks like GPT-3.5 currently acts as environment feedback, but it would be helpful to hook up to a source of truth for other models)
+- Critique: upon failing something, include info from the MC wiki on the context around it
+- Writing code for task: once we give voyager a task like 'cract 1 stone pickaxe', we should probably include the MC wiki context to inform it
+
+For multimodal processing, it would definitely be useful to send a screenshot (or 4, NSEW) of the current location to Gemini to help describe the situation
