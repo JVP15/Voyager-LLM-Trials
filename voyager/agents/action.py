@@ -11,6 +11,75 @@ from langchain.schema import AIMessage, HumanMessage, SystemMessage
 from voyager.prompts import load_prompt
 from voyager.control_primitives_context import load_control_primitives_context
 
+# TODO: get it from a predefined list (possibly randomly generated), right now, it is from trial_1
+EXAMPLE_CODE_1 = """```js
+async function mineWoodLog(bot) {
+  const woodLogNames = ["oak_log", "birch_log", "spruce_log", "jungle_log", "acacia_log", "dark_oak_log", "mangrove_log"];
+
+  // Find a wood log block
+  const woodLogBlock = await exploreUntil(bot, new Vec3(1, 0, 1), 60, () => {
+    return bot.findBlock({
+      matching: block => woodLogNames.includes(block.name),
+      maxDistance: 32
+    });
+  });
+  if (!woodLogBlock) {
+    bot.chat("Could not find a wood log.");
+    return;
+  }
+
+  // Mine the wood log block
+  await mineBlock(bot, woodLogBlock.name, 1);
+  bot.chat("Wood log mined.");
+}
+```"""
+
+EXAMPLE_CODE_2 = """```js
+async function craftWoodenPickaxe(bot) {
+  // check if crafting table is in the inventory
+  const craftingTableCount = bot.inventory.count(
+    mcData.itemsByName.crafting_table.id
+  );
+
+  // If not, craft a crafting table
+  if (craftingTableCount === 0) {
+    await craftCraftingTable(bot);
+  }
+
+  // Check if there are enough oak planks in the inventory
+  const oakPlanksCount = bot.inventory.count(mcData.itemsByName.oak_planks.id);
+
+  // If not, craft oak planks from oak logs
+  if (oakPlanksCount < 6) {
+    const oakLogsCount = bot.inventory.count(mcData.itemsByName.oak_log.id);
+    const planksToCraft = Math.ceil((6 - oakPlanksCount) / 4);
+    if (oakLogsCount < planksToCraft) {
+      await mineBlock(bot, "oak_log", planksToCraft - oakLogsCount);
+    }
+    await craftItem(bot, "oak_planks", planksToCraft);
+    bot.chat("Crafted oak planks.");
+  }
+
+  // Check if there are enough sticks in the inventory
+  const sticksCount = bot.inventory.count(mcData.itemsByName.stick.id);
+
+  // If not, craft sticks from oak planks
+  if (sticksCount < 2) {
+    await craftItem(bot, "stick", 1);
+    bot.chat("Crafted sticks.");
+  }
+
+  // Place the crafting table near the bot
+  const craftingTablePosition = bot.entity.position.offset(1, 0, 0);
+  await placeItem(bot, "crafting_table", craftingTablePosition);
+
+  // Craft a wooden pickaxe using the crafting table
+  await craftItem(bot, "wooden_pickaxe", 1);
+  bot.chat("Crafted a wooden pickaxe.");
+}
+```"""
+
+
 
 class ActionAgent:
     def __init__(
@@ -92,7 +161,7 @@ class ActionAgent:
             system_template
         )
         system_message = system_message_prompt.format(
-            programs=programs, response_format=response_format
+            programs=programs, response_format=response_format, example_code_1=EXAMPLE_CODE_1, example_code_2=EXAMPLE_CODE_2,
         )
         assert isinstance(system_message, SystemMessage)
         return system_message

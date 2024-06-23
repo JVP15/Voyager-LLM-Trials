@@ -13,3 +13,9 @@ gymnasium
 psutil
 minecraft_launcher_lib
 python-dotenv
+langchain_google_genai
+langchain_mistralai
+langchain_anthropic
+anthropic
+langchain_cohere
+langchain_google_vertexai

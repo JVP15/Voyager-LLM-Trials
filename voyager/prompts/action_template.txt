@@ -43,7 +43,16 @@ Code:
     9) Do not write infinite loops or recursive functions.
     10) Do not use `bot.on` or `bot.once` to register event listeners. You definitely do not need them.
     11) Name your function in a meaningful way (can infer the task from the name).
+    12) The following are some good examples of using the Mineflayer APIs. There may be other ways to write the functions, including ways with different crafting recipes (e.g. using different types of wood logs to craft sticks). You should not copy the code directly, but you can use them as a reference to write your own code.
+
+Example Code 1:
+{example_code_1}
+
+
+Example Code 2:
+{example_code_2}
 
 You should only respond in the format as described below:
 RESPONSE FORMAT:
 {response_format}
+

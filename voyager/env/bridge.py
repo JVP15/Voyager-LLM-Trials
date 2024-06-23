@@ -47,9 +47,25 @@ class VoyagerEnv(gym.Env):
         self.connected = False
         self.server_paused = False
 
+        self.receiver = None
+
     def get_mineflayer_process(self, server_port):
         U.f_mkdir(self.log_path, "mineflayer")
         file_path = os.path.abspath(os.path.dirname(__file__))
+
+        # before launching the process, I need to run another python script in a different terminal
+        # the script is prismarine_receiver.py
+
+        # self.receiver = SubprocessMonitor(
+        #     commands=[
+        #         "python",
+        #         U.f_join(file_path, "prismarine_receiver.py"),
+        #     ],
+        #     name="prismarine_receiver",
+        #     ready_match=r"Socket now listening",
+        #     #log_path=U.f_join(self.log_path, "prismarine_receiver"),
+        # )
+
         return SubprocessMonitor(
             commands=[
                 "node",
@@ -122,6 +138,12 @@ class VoyagerEnv(gym.Env):
             raise RuntimeError("Failed to step Minecraft server")
         returned_data = res.json()
         self.pause()
+
+        # call the observation function
+        print('observing')
+        _ = requests.post(
+            f'{self.server}/observe', json=data, timeout=self.request_timeout
+        )
         return json.loads(returned_data)
 
     def render(self):

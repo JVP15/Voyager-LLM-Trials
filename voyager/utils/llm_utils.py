@@ -16,6 +16,7 @@ from langchain_google_vertexai import ChatVertexAI, VertexAIEmbeddings, VertexAI
 
 # thansk to https://gist.github.com/gregburek/1441055 for rate limiting code
 import time
+import reka
 
 def RateLimited(maxPerSecond):
     minInterval = 1.0 / float(maxPerSecond)
@@ -73,7 +74,12 @@ class ChatVertexAIAnthropic(BaseChatModel):
         self.temperature = temperature
         self.request_timeout = timeout
 
-        self.client = AnthropicVertex(region='us-central1', project_id=os.environ['VERTEX_AI_PROJECT'])
+        if 'opus' or '3.5' in model_name:
+            region = 'us-east5'
+        else:
+            region = 'us-central1'
+
+        self.client = AnthropicVertex(region=region, project_id=os.environ['VERTEX_AI_PROJECT'])
 
     @RateLimited(5) # right now, I can only call this a few times/second
     def _generate_rate_limited(self, messages, stop=None, run_manager=None, **kwargs):
@@ -118,6 +124,85 @@ class ChatVertexAIAnthropic(BaseChatModel):
     def _llm_type(self) -> str:
         return "vertexai-anthropic"
 
+def convert_chat_message_to_reka(message): # had to look at the code for Langchain's ChatAnthropic and work backwards
+    role = message.type
+    content = message.content
+    if role == 'system':
+        role = 'human'
+    elif role == 'ai':
+        role = 'model'
+
+    return {'type': role, 'text': content}
+
+def convert_chat_messages_to_reka(messages):
+    reka_messages = []
+
+    for i in range(len(messages)):
+        if i == 0 and messages[i].type == 'system' and messages[i+1].type == 'human':
+            # Combine system and human messages
+            combined_content = messages[i].content + "\n\n" + messages[i+1].content
+            reka_messages.append({'type': 'human', 'text': combined_content})
+        elif messages[i-1].type == 'system' and messages[i].type == 'human':
+            # Skip this message as it has been combined with the previous system message
+            continue
+        else:
+            reka_messages.append(convert_chat_message_to_reka(messages[i]))
+
+    return reka_messages
+
+
+class ChatReka(BaseChatModel):
+    model_name: str = None
+    temperature: float = 0.0
+    request_timeout: int = 60
+    api_key: str = None
+
+    def __init__(self, model_name, temperature=None, timeout=None):
+        super().__init__()
+        self.model_name = model_name
+        self.temperature = temperature
+        self.request_timeout = timeout
+        reka.API_KEY = os.environ['REKA_API_KEY']
+
+    def _generate_rate_limited(self, messages, stop=None, run_manager=None, **kwargs):
+        messages = convert_chat_messages_to_reka(messages)
+
+        response = reka.chat(
+            model_name=self.model_name,
+            conversation_history=messages,
+            temperature=self.temperature,
+        )
+        response = response['text']
+
+        response = AIMessage(response)
+
+        return ChatResult(generations=[ChatGeneration(message=response)])
+
+    def _generate(self,
+                  messages,
+                  stop = None,
+                  run_manager = None,
+                  **kwargs
+                  ):
+        return self._generate_rate_limited(messages, stop, run_manager, **kwargs)
+
+        # # I may still get an error here, so re-try it up to 3 times, and if that doesn't work, then just raise the error
+        # for i in range(3):
+        #     try:
+        #         return self._generate_rate_limited(messages, stop, run_manager, **kwargs)
+        #     except Exception as e:
+        #         if i < 2:
+        #             time.sleep(30) # wait a little bit before trying again if it fails the second time, hopefully this will give it a chance to recover fully
+        #         if i == 2:
+        #             raise e
+        #
+        #         print(f'Got error {e}, trying {2 - i} more times')
+
+    @property
+    def _llm_type(self) -> str:
+        return "chat-reka"
+
+
 
 # class ChatSaveInputOutputLLM(BaseChatModel):
 #     def __init__(self, llm):
@@ -153,7 +238,7 @@ def get_llm(model_name, temperature=None, request_timeout=None):
                 HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
             },
         )
-    if 'command' in model_name:
+    elif 'command' in model_name:
         llm = ChatCohere(
             model_name=model_name,
             temperature=temperature,
@@ -176,6 +261,12 @@ def get_llm(model_name, temperature=None, request_timeout=None):
         )
     elif 'claude' in model_name:
         llm = ChatVertexAIAnthropic(
+            model_name=model_name,
+            temperature=temperature,
+            timeout=request_timeout
+        )
+    elif 'reka' in model_name:
+        llm = ChatReka(
             model_name=model_name,
             temperature=temperature,
             timeout=request_timeout
@@ -205,6 +296,8 @@ def get_embedding_model(model_name):
         embedding_model = OpenAIEmbeddings() # claude doen't have an embedding model, so I guess I'll just use OpenAI
     elif 'command' in model_name:
         embedding_model = CohereEmbeddings()
+    elif 'reka' in model_name:
+        embedding_model = OpenAIEmbeddings() # reka doesn't have an embedding model, so I guess I'll just use OpenAI
     else:
         raise(NotImplementedError(f"Model {model_name} not implemented for embeddings"))
 
@@ -214,11 +307,12 @@ if __name__ == '__main__':
     from dotenv import load_dotenv
     load_dotenv()
 
-
     from langchain_core.prompts import ChatPromptTemplate
 
-    llm = ChatVertexAIAnthropic(model_name='claude-3-sonnet@20240229', )
+    #llm = ChatVertexAIAnthropic(model_name='claude-3-sonnet@20240229', )
+    llm = ChatReka(model_name='reka-core')
     prompt = ChatPromptTemplate.from_messages([
+        ('system', 'You are an expert at python programming'),
         ('human', '{text}')
     ])
     chain = prompt | llm
