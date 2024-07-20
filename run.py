@@ -9,9 +9,9 @@ openai_api_key = os.getenv("OPENAI_API_KEY")
 
 voyager = Voyager(
     #azure_login=azure_login,
-    mc_port=49224,
+    mc_port=55130,
     openai_api_key=openai_api_key,
-    ckpt_dir='skill_library/claude-3-5-sonnet-2171441100564293352',
+    ckpt_dir='skill_library/gpt-4o-mini-2171441100564293352',
     #resume=True,
     #ckpt_dir='skill_library/claude--2171441100564293352',
     # action_agent_model_name='gpt-4-0125-preview',
@@ -31,6 +31,12 @@ voyager = Voyager(
     # curriculum_agent_model_name='gpt-4o',
     # curriculum_agent_qa_model_name='gpt-4o',
     # skill_manager_model_name='gpt-4o',
+
+    action_agent_model_name='gpt-4o-mini',
+    critic_agent_model_name='gpt-4o-mini',
+    curriculum_agent_model_name='gpt-4o-mini',
+    curriculum_agent_qa_model_name='gpt-4o-mini',
+    skill_manager_model_name='gpt-4o-mini',
 
     # action_agent_model_name='models/gemini-1.0-pro-latest',
     # critic_agent_model_name='models/gemini-1.0-pro-latest',
@@ -54,13 +60,13 @@ voyager = Voyager(
     # critic_agent_model_name='claude-3-sonnet@20240229',
     # curriculum_agent_model_name='claude-3-sonnet@20240229',
     # curriculum_agent_qa_model_name='claude-3-sonnet@20240229',
-    # skill_manager_model_name='claude-3-sonnet@20240229',
+    # skill_manager_model_name='claude-3-sonnet@20240229',/
 
-    action_agent_model_name='claude-3-5-sonnet@20240620',
-    critic_agent_model_name='claude-3-5-sonnet@20240620',
-    curriculum_agent_model_name='claude-3-5-sonnet@20240620',
-    curriculum_agent_qa_model_name='claude-3-5-sonnet@20240620',
-    skill_manager_model_name='claude-3-5-sonnet@20240620',
+    # action_agent_model_name='claude-3-5-sonnet@20240620',
+    # critic_agent_model_name='claude-3-5-sonnet@20240620',
+    # curriculum_agent_model_name='claude-3-5-sonnet@20240620',
+    # curriculum_agent_qa_model_name='claude-3-5-sonnet@20240620',
+    # skill_manager_model_name='claude-3-5-sonnet@20240620',
 
     # action_agent_model_name='claude-3-opus@20240229',
     # critic_agent_model_name='claude-3-opus@20240229',
